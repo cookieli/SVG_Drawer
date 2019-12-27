@@ -1,6 +1,7 @@
 #include "software_renderer.h"
 
 #include <cmath>
+#include <cstdlib>
 #include <vector>
 #include <iostream>
 #include <algorithm>
@@ -238,12 +239,57 @@ void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
 
 }
 
+
+
 void SoftwareRendererImp::rasterize_line( float x0, float y0,
                                           float x1, float y1,
                                           Color color) {
 
   // Task 2: 
   // Implement line rasterization
+    int sx = (int) floor(x0), sy = (int) floor(y0),
+            ex = (int) floor(x1), ey = (int) floor(y1);
+    if (sx > ex) {
+        std::swap(sx, ex);
+        std::swap(sy, ey);
+    }
+    int dx = ex - sx,
+            dy = ey - sy,
+            eps = 0;
+    bool is_postive_slope = true;
+    if (dy * dx < 0) is_postive_slope = false;
+    bool exchange_x_y = false;
+    if (abs(dy) > abs(dx)) {
+        exchange_x_y = true;
+        std::swap(dy, dx);
+        std::swap(sx, sy);
+        std::swap(ex, ey);
+    }
+    if (sx > ex) {
+        std::swap(sx, ex);
+        std::swap(sy, ey);
+        dy = -dy;
+        dx = -dx;
+    }
+
+    int y = sy;
+    for (int x = sx; x <= ex; x++) {
+        if (exchange_x_y) rasterize_point((float) y, (float) x, color);
+        else rasterize_point((float) x, (float) y, color);
+        eps += dy;
+        if (is_postive_slope) {
+            if ((eps << 1) >= dx) {
+                y++;
+                eps -= dx;
+            }
+        } else {
+            if ((eps * 2) <= -dx) {
+                y--;
+                eps += dx;
+            }
+        }
+    }
+
 }
 
 void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
