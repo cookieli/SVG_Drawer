@@ -26,16 +26,17 @@ link_directories(
 
 # Set drawsvg source
 set(CMU462_DRAWSVG_SOURCE
-    svg.cpp
-    png.cpp
-    texture.cpp
-    viewport.cpp
-    triangulation.cpp
-#    hardware_renderer.cpp
-    software_renderer.cpp
-    drawsvg.cpp
-    main.cpp
-)
+        svg.cpp
+        png.cpp
+        texture.cpp
+        viewport.cpp
+        triangulation.cpp
+        #    hardware_renderer.cpp
+        Rectangle.cpp
+        software_renderer.cpp
+        drawsvg.cpp
+        main.cpp
+        )
 
 if (WIN32)
     list(APPEND CMU462_DRAWSVG_SOURCE dirent/dirent.c)
@@ -43,15 +44,15 @@ endif(WIN32)
 
 # Set drawsvg header
 set(CMU462_DRAWSVG_HEADER
-    svg.h
-    png.h
-    texture.h
-    viewport.h
-    triangulation.h
-    hardware_renderer.h
-    software_renderer.h
-    drawsvg.h
-)
+        svg.h
+        png.h
+        texture.h
+        viewport.h
+        triangulation.h
+        hardware_renderer.h
+        software_renderer.h
+        drawsvg.h
+        Rectangle.h GeometricRelation.cpp GeometricRelation.h)
 
 # Import hardware renderer
 option(DRAWSVG_BUILD_HARDWARE_RENDERER  "Build hardware implementation"  ON)

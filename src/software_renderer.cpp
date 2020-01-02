@@ -5,8 +5,10 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
-
+#include <utility>
 #include "triangulation.h"
+#include "Rectangle.h"
+#include "GeometricRelation.h"
 
 using namespace std;
 
@@ -239,6 +241,10 @@ void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
 
 }
 
+void SoftwareRendererImp::rasterize_point(point p, Color c){
+    rasterize_point(p.first, p.second, c);
+}
+
 
 
 void SoftwareRendererImp::rasterize_line( float x0, float y0,
@@ -292,13 +298,154 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
 }
 
+void SoftwareRendererImp::rasterize_line(point start, point end,
+                                         Color color){
+    rasterize_line(start.first, start.second,
+                   end.first,   end.second,
+                   color);
+}
+
+void SoftwareRendererImp::rasterize_rectangle(Rectangle &r, Color color) {
+    rasterize_line(r.bottomLeft, r.bottomRight, color);
+    rasterize_line(r.bottomRight, r.topRight, color);
+    rasterize_line(r.topRight, r.topLeft, color);
+    rasterize_line(r.topLeft, r.bottomLeft, color);
+
+}
+
+/*
+ * this function returns a rectangle that just boxing the triangle
+ * and return rectangle four endpoint indices.
+ * the index order is leftTop, rightTop, rightBottom, leftBottom
+ * */
+Rectangle box_triangle(float x0, float y0,
+                                             float x1, float y1,
+                                             float x2, float y2){
+    using point = SoftwareRenderer::point ;
+    vector<point> rectangle;
+    float rightmost_x = ceil(max({x0, x1, x2}));
+    float leftmost_x  = floor(min({x0, x1, x2})) + 0.5;
+    float top_y       = ceil(max({y0, y1, y2}));
+    float bottom_y    = floor(min({y0, y1, y2})) + 0.5;
+    point leftTop     = make_pair(leftmost_x, top_y);
+    point rightTop    = make_pair(rightmost_x, top_y);
+    point rightBottom = make_pair(rightmost_x, bottom_y);
+    point leftBottom  = make_pair(leftmost_x, bottom_y);
+    rectangle.push_back(leftTop);
+    rectangle.push_back(rightTop);
+    rectangle.push_back(rightBottom);
+    rectangle.push_back(leftBottom);
+    Rectangle r = Rectangle(rectangle);
+    return r;
+
+}
+
+//untested
+vector<std::pair<float, float>> anticlock_triangle_points(float x0, float y0,
+                       float x1, float y1,
+                       float x2, float y2){
+    using point = SoftwareRenderer::point;
+    point point1 = make_pair(x0, y0);
+    point point2 = make_pair(x1, y1);
+    point point3 = make_pair(x2, y2);
+    vector<point> points;
+    points.push_back(point1);
+    points.push_back(point2);
+    points.push_back(point3);
+    point top_point = *max_element(points.begin(), points.end(),
+                                   [](point p1, point p2){
+                                        return p1.second < p2.second;
+                                     });
+    points.erase(std::remove(points.begin(), points.end(), top_point), points.end());
+    point s_top_point = *max_element(points.begin(), points.end(),
+                                   [](point p1, point p2){
+                                       return p1.second < p2.second;
+                                   });
+    points.erase(std::remove(points.begin(), points.end(), s_top_point), points.end());
+    point third_point = points[0];
+    vector<point> anti_clock;
+    if(s_top_point.second == top_point.second){
+        if(s_top_point.first > top_point.first){
+            std::swap(s_top_point,top_point);
+        }
+    } else {
+        if(s_top_point.first > third_point.first){
+            std::swap(s_top_point, third_point);
+        }
+    }
+    anti_clock.push_back(top_point);
+    anti_clock.push_back(s_top_point);
+    anti_clock.push_back(third_point);
+    return anti_clock;
+
+}
+
+
+
+
+
+
+void SoftwareRendererImp::fill_in_rectangle(Rectangle &r, Color color) {
+
+    float start_y_index = r.bottomLeft.second;
+    while(start_y_index <= r.topLeft.second){
+        rasterize_line(r.bottomLeft.first, start_y_index,
+                       r.bottomRight.first, start_y_index,
+                       color);
+        start_y_index += 1;
+    }
+}
+
+void SoftwareRendererImp::rasterize_points_in_box(Rectangle r,
+                                                  vector<point> &anticlockTriangle, Color color) {
+
+    int in_triangle_cnt = 0;
+    for(float start_y_index = r.bottomLeft.second; start_y_index <= r.topLeft.second; start_y_index++){
+        for(float start_x_index = r.bottomLeft.first; start_x_index <= r.bottomRight.first; start_x_index++){
+            point p = make_pair(start_x_index, start_y_index);
+            GeometricRelation::PointTriangleRelation  relation = GeometricRelation::point_in_triangle(p, anticlockTriangle);
+            if (relation == GeometricRelation::IN_TRIANGLE || relation == GeometricRelation::ON_TRIANGLE){
+                rasterize_point(p,color);
+                in_triangle_cnt++;
+            }
+        }
+    }
+}
+
+
 void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                                               float x1, float y1,
                                               float x2, float y2,
                                               Color color ) {
   // Task 3: 
   // Implement triangle rasterization
+  auto rectangle = box_triangle(x0, y0,
+                                x1, y1,
+                                x2, y2);
+//  rasterize_rectangle(rectangle, color);
+  auto anti_clock = anticlock_triangle_points(x0, y0,
+                            x1, y1,
+                            x2, y2);
+  rasterize_line(x0, y0,
+                 x1, y1,
+                 color);
+  rasterize_line(x1, y1,
+                 x2, y2,
+                 color);
+  rasterize_line(x2, y2,
+                 x0, y0,
+                 color);
 
+  while(rectangle.has_next_box()){
+      Rectangle r = rectangle.next_box();
+      GeometricRelation::BoxTriangleRelation  relation = GeometricRelation::box_triangle_relation(anti_clock, r);
+      if(relation == GeometricRelation::INSIDE_TRIANGLE){
+          fill_in_rectangle(r,color);
+      } else if(relation == GeometricRelation::CROSS_TRIANGLE){
+          rasterize_rectangle(r, color);
+          rasterize_points_in_box(r,anti_clock, color);
+      }
+  }
 }
 
 void SoftwareRendererImp::rasterize_image( float x0, float y0,
