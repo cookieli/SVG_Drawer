@@ -33,6 +33,7 @@ namespace CMU462 { // CMU462
         // Clear render target
         inline void clear_target() {
             memset(render_target, 255, 4 * target_w * target_h);
+            std::fill(supersample_render_target.begin(), supersample_render_target.end(), 0);
         }
 
         // Set texture sampler
@@ -56,6 +57,10 @@ namespace CMU462 { // CMU462
         // Target buffer dimension (in pixels)
         size_t target_w;
         size_t target_h;
+
+        std::vector<unsigned char> supersample_render_target;
+        size_t sample_w;
+        size_t sample_h;
 
         // Texture sampler being used
         Sampler2D *sampler;
@@ -143,10 +148,6 @@ namespace CMU462 { // CMU462
 
         // resolve samples to render target
         void resolve(void);
-
-        std::vector<unsigned char> supersample_render_target;
-        size_t sample_w;
-        size_t sample_h;
 
     }; // class SoftwareRendererImp
 

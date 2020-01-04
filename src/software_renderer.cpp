@@ -237,11 +237,26 @@ void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
   if ( sx < 0 || sx >= target_w ) return;
   if ( sy < 0 || sy >= target_h ) return;
 
+  sx *= sample_rate;
+  sy *= sample_rate;
+  for(int x = sx; x < sx + sample_rate; x++){
+      for(int y = sy; y < sy + sample_rate; y++){
+          int pos = 4 * (x + y *sample_w);
+          supersample_render_target[pos  ] = (uint8_t) (color.r * 255);
+          supersample_render_target[pos+1] = (uint8_t) (color.g * 255);
+          supersample_render_target[pos+2] = (uint8_t) (color.b * 255);
+          supersample_render_target[pos+3] = (uint8_t) (color.a * 255);
+
+
+
+      }
+  }
+
   // fill sample - NOT doing alpha blending!
-  render_target[4 * (sx + sy * target_w)    ] = (uint8_t) (color.r * 255);
-  render_target[4 * (sx + sy * target_w) + 1] = (uint8_t) (color.g * 255);
-  render_target[4 * (sx + sy * target_w) + 2] = (uint8_t) (color.b * 255);
-  render_target[4 * (sx + sy * target_w) + 3] = (uint8_t) (color.a * 255);
+//  render_target[4 * (sx + sy * target_w)    ] = (uint8_t) (color.r * 255);
+//  render_target[4 * (sx + sy * target_w) + 1] = (uint8_t) (color.g * 255);
+//  render_target[4 * (sx + sy * target_w) + 2] = (uint8_t) (color.b * 255);
+//  render_target[4 * (sx + sy * target_w) + 3] = (uint8_t) (color.a * 255);
 
 }
 
@@ -467,6 +482,33 @@ void SoftwareRendererImp::resolve( void ) {
   // Task 4: 
   // Implement supersampling
   // You may also need to modify other functions marked with "Task 4".
+  size_t sample_num = sample_rate * sample_rate;
+
+  //first resampling
+  for(size_t x = 0; x <=sample_w - sample_rate; x+= sample_rate){
+      for(size_t y = 0; y<= sample_h - sample_rate; y += sample_rate){
+          uint16_t r = 0, g = 0, b = 0,a = 0;
+          for(size_t i = 0; i < sample_rate; i++){
+              for(size_t j = 0; j < sample_rate; j++){
+                  size_t pos = 4* (x+i + (y+j) * sample_w);
+                  r += supersample_render_target[pos];
+                  g += supersample_render_target[pos+1];
+                  b += supersample_render_target[pos+2];
+                  a += supersample_render_target[pos+3];
+
+              }
+          }
+          r /= sample_num;
+          g /= sample_num;
+          b /= sample_num;
+          a /= sample_num;
+          size_t pos = 4 * (x/sample_rate + (y/sample_rate) * target_w);
+          render_target[pos]   = (uint8_t)r;
+          render_target[pos+1] = (uint8_t)g;
+          render_target[pos+2] = (uint8_t)b;
+          render_target[pos+3] = (uint8_t)a;
+      }
+  }
   return;
 
 }
