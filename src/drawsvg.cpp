@@ -417,7 +417,7 @@ void DrawSVG::draw_zoom() {
 void DrawSVG::inc_sample_rate() {
   if (method == Software) {
     sample_rate += sample_rate < 4 ? 1 : 0;
-//    software_renderer_imp->set_sample_rate(sample_rate);
+    software_renderer_imp->set_sample_rate(sample_rate);
     software_renderer_ref->set_sample_rate(sample_rate);
     redraw();
   }
