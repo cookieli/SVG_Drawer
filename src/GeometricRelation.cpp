@@ -32,27 +32,22 @@ namespace CMU462 {
             }
         }
     }
-    GeometricRelation::PointLineRelation GeometricRelation::pointLineRelation(point p, point line_start,
+    int GeometricRelation::pointLineRelation(point p, point line_start,
                                                                               point line_end){
         float dx = line_end.first - line_start.first;
         float dy = line_end.second - line_start.second;
         float dpoint_x = p.first - line_start.first;
         float dpoint_y = p.second - line_start.second;
-        int point_line_relation =-dpoint_x * dy + dpoint_y * dx;
-        if (point_line_relation > 0)      return IN_LINE;
-        else if(point_line_relation == 0) return ON_LINE;
-        else                              return OUT_LINE;
+        float point_line_relation =-dpoint_x * dy + dpoint_y * dx;
+        return point_line_relation;
     }
 
     GeometricRelation::PointTriangleRelation  GeometricRelation::point_in_triangle(point p,
                                                                                    vector<point> &anti_clock){
-        PointLineRelation  r1 = pointLineRelation(p, anti_clock[0], anti_clock[1]);
-        PointLineRelation  r2 = pointLineRelation(p, anti_clock[1], anti_clock[2]);
-        PointLineRelation  r3 = pointLineRelation(p, anti_clock[2], anti_clock[0]);
-        if(r1 == ON_LINE || r2 == ON_LINE || r3 == ON_LINE){
-            return ON_TRIANGLE;
-        }
-        if(r1 == OUT_LINE || r2 == OUT_LINE || r3 == OUT_LINE){
+        float  r1 = pointLineRelation(p, anti_clock[0], anti_clock[1]);
+        float  r2 = pointLineRelation(p, anti_clock[1], anti_clock[2]);
+        float  r3 = pointLineRelation(p, anti_clock[2], anti_clock[0]);
+        if(r1*r2 <0 || r2*r3 < 0){
             return OUT_TRIANGLE;
         }
         return IN_TRIANGLE;

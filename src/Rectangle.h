@@ -31,6 +31,7 @@ namespace CMU462{
         };
         Rectangle next_box();
         bool has_next_box(){ return box_count < split;}
+        bool has_split(){return split > 1;}
         std::vector<point> to_vec(){return point_vec;}
 
 

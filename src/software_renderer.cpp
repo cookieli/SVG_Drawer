@@ -48,7 +48,9 @@ void SoftwareRendererImp::set_sample_rate( size_t sample_rate ) {
   // Task 4: 
   // You may want to modify this for supersampling support
   this->sample_rate = sample_rate;
-
+  this->sample_h = this->target_h * this->sample_rate;
+  this->sample_w = this->target_w * this->sample_rate;
+  this->supersample_render_target.resize(4 * this->sample_w * this->sample_h);
 }
 
 void SoftwareRendererImp::set_render_target( unsigned char* render_target,
@@ -59,7 +61,9 @@ void SoftwareRendererImp::set_render_target( unsigned char* render_target,
   this->render_target = render_target;
   this->target_w = width;
   this->target_h = height;
-
+  this->sample_h = this->target_h * this->sample_rate;
+  this->sample_w = this->target_w * this->sample_rate;
+  this->supersample_render_target.resize(4 * this->sample_w * this->sample_h);
 }
 
 void SoftwareRendererImp::draw_element( SVGElement* element ) {
@@ -305,7 +309,7 @@ void SoftwareRendererImp::rasterize_line(point start, point end,
                    color);
 }
 
-void SoftwareRendererImp::rasterize_rectangle(Rectangle &r, Color color) {
+void SoftwareRendererImp::rasterize_rectangle(Rectangle r, Color color) {
     rasterize_line(r.bottomLeft, r.bottomRight, color);
     rasterize_line(r.bottomRight, r.topRight, color);
     rasterize_line(r.topRight, r.topLeft, color);
@@ -399,14 +403,12 @@ void SoftwareRendererImp::fill_in_rectangle(Rectangle &r, Color color) {
 void SoftwareRendererImp::rasterize_points_in_box(Rectangle r,
                                                   vector<point> &anticlockTriangle, Color color) {
 
-    int in_triangle_cnt = 0;
-    for(float start_y_index = r.bottomLeft.second; start_y_index <= r.topLeft.second; start_y_index++){
-        for(float start_x_index = r.bottomLeft.first; start_x_index <= r.bottomRight.first; start_x_index++){
+    for(float start_y_index = floor(r.bottomLeft.second) + 0.5; start_y_index <= ceil(r.topLeft.second); start_y_index++){
+        for(float start_x_index = floor(r.bottomLeft.first) + 0.5; start_x_index <= ceil(r.bottomRight.first); start_x_index++){
             point p = make_pair(start_x_index, start_y_index);
             GeometricRelation::PointTriangleRelation  relation = GeometricRelation::point_in_triangle(p, anticlockTriangle);
             if (relation == GeometricRelation::IN_TRIANGLE || relation == GeometricRelation::ON_TRIANGLE){
                 rasterize_point(p,color);
-                in_triangle_cnt++;
             }
         }
     }
@@ -442,7 +444,10 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
       if(relation == GeometricRelation::INSIDE_TRIANGLE){
           fill_in_rectangle(r,color);
       } else if(relation == GeometricRelation::CROSS_TRIANGLE){
-          rasterize_rectangle(r, color);
+//          rasterize_rectangle(r, color);
+          rasterize_points_in_box(r,anti_clock, color);
+      } else if (!rectangle.has_split()){
+//          rasterize_rectangle(r, color);
           rasterize_points_in_box(r,anti_clock, color);
       }
   }

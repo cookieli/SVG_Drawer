@@ -15,11 +15,11 @@ namespace CMU462{
         int split_box_y_length = ceil((topLeft.second - bottomLeft.second)/axis_split);
         point box_bottomLeft = make_pair(floor(bottomLeft.first + x_part*split_box_x_length) + 0.5,
                                          floor(bottomLeft.second + y_part*split_box_y_length) + 0.5);
-        float bottomRightXindex = box_bottomLeft.first + split_box_x_length;
+        float bottomRightXindex = ceil(box_bottomLeft.first + split_box_x_length);
         if(x_part == axis_split - 1) bottomRightXindex = topRight.first;
         point box_bottomRight =make_pair(bottomRightXindex,
                                          box_bottomLeft.second);
-        float topLeftYindex = box_bottomLeft.second + split_box_y_length;
+        float topLeftYindex = ceil(box_bottomLeft.second + split_box_y_length);
         if(y_part == axis_split - 1) topLeftYindex = topLeft.second;
         point box_topLeft = make_pair(box_bottomLeft.first,
                                       topLeftYindex);

@@ -30,7 +30,7 @@ namespace CMU462 {
 
         static bool onSegment(point p, point a, point b);
         static LineRelation lineRelation(point a, point b, point c, point d);
-        static PointLineRelation pointLineRelation(point p, point line_start, point line_end);
+        static int pointLineRelation(point p, point line_start, point line_end);
         static PointTriangleRelation point_in_triangle
                                     (point p, std::vector<SoftwareRenderer::point> &anti_clock);
         static BoxTriangleRelation box_triangle_relation(std::vector<point> &anticlockTriangle,

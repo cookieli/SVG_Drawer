@@ -74,7 +74,7 @@ namespace CMU462 { // CMU462
         // draw an svg input to render target
         void draw_svg(SVG &svg);
 
-        void rasterize_rectangle(CMU462::Rectangle& rectangle, Color c);
+        void rasterize_rectangle(CMU462::Rectangle rectangle, Color c);
         // set sample rate
         void set_sample_rate(size_t sample_rate);
 
@@ -143,6 +143,10 @@ namespace CMU462 { // CMU462
 
         // resolve samples to render target
         void resolve(void);
+
+        std::vector<unsigned char> supersample_render_target;
+        size_t sample_w;
+        size_t sample_h;
 
     }; // class SoftwareRendererImp
 
