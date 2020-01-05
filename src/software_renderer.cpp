@@ -273,7 +273,59 @@ void SoftwareRendererImp::rasterize_point(point p, Color c){
     rasterize_point(p.first, p.second, c);
 }
 
+void SoftwareRendererImp::drawLineOfSuperSample(float x0, float y0,
+                           float x1, float y1,
+                           Color color){
+    int sx = (int) floor(x0), sy = (int) floor(y0),
+            ex = (int) floor(x1), ey = (int) floor(y1);
+    if (sx > ex) {
+        std::swap(sx, ex);
+        std::swap(sy, ey);
+    }
+    int dx = ex - sx,
+            dy = ey - sy,
+            eps = 0;
+    bool is_postive_slope = true;
+    if (dy * dx < 0) is_postive_slope = false;
+    bool exchange_x_y = false;
+    if (abs(dy) > abs(dx)) {
+        exchange_x_y = true;
+        std::swap(dy, dx);
+        std::swap(sx, sy);
+        std::swap(ex, ey);
+    }
+    if (sx > ex) {
+        std::swap(sx, ex);
+        std::swap(sy, ey);
+        dy = -dy;
+        dx = -dx;
+    }
 
+    int y = sy;
+    for (int x = sx; x <= ex; x++) {
+        if (exchange_x_y) {
+            fill_sample(y, x, color);
+
+        }
+        else {
+            fill_sample(x, y, color);
+        }
+        eps += dy;
+        if (is_postive_slope) {
+            if ((eps << 1) >= dx) {
+                y++;
+                eps -= dx;
+            }
+        } else {
+            if ((eps * 2) <= -dx) {
+                y--;
+                eps += dx;
+            }
+        }
+    }
+
+
+}
 
 void SoftwareRendererImp::rasterize_line( float x0, float y0,
                                           float x1, float y1,
@@ -338,21 +390,6 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
 }
 
-void SoftwareRendererImp::rasterize_line(point start, point end,
-                                         Color color){
-    rasterize_line(start.first, start.second,
-                   end.first,   end.second,
-                   color);
-}
-
-void SoftwareRendererImp::rasterize_rectangle(Rectangle r, Color color) {
-    rasterize_line(r.bottomLeft, r.bottomRight, color);
-    rasterize_line(r.bottomRight, r.topRight, color);
-    rasterize_line(r.topRight, r.topLeft, color);
-    rasterize_line(r.topLeft, r.bottomLeft, color);
-
-}
-
 /*
  * this function returns a rectangle that just boxing the triangle
  * and return rectangle four endpoint indices.
@@ -405,9 +442,9 @@ void SoftwareRendererImp::fill_in_rectangle(Rectangle &r, Color color) {
 
     float start_y_index = r.bottomLeft.second;
     while(start_y_index <= r.topLeft.second){
-        rasterize_line(r.bottomLeft.first, start_y_index,
+        drawLineOfSuperSample(r.bottomLeft.first, start_y_index,
                        r.bottomRight.first, start_y_index,
-                       color, true);
+                       color);
         start_y_index += 1;
     }
 }
@@ -420,7 +457,7 @@ void SoftwareRendererImp::rasterize_points_in_box(Rectangle r,
             point p = make_pair(start_x_index, start_y_index);
             GeometricRelation::PointTriangleRelation  relation = GeometricRelation::point_in_triangle(p, anticlockTriangle);
             if (relation == GeometricRelation::IN_TRIANGLE || relation == GeometricRelation::ON_TRIANGLE){
-                rasterize_point(p,color);
+                fill_sample(p.first,p.second, color);
             }
         }
     }
@@ -433,36 +470,42 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                                               Color color ) {
   // Task 3: 
   // Implement triangle rasterization
-  auto rectangle = box_triangle(x0, y0,
-                                x1, y1,
-                                x2, y2);
-//  rasterize_rectangle(rectangle, color);
-  auto anti_clock = anticlock_triangle_points(x0, y0,
-                            x1, y1,
-                            x2, y2);
-  rasterize_line(x0, y0,
-                 x1, y1,
-                 color, true);
-  rasterize_line(x1, y1,
-                 x2, y2,
-                 color, true);
-  rasterize_line(x2, y2,
-                 x0, y0,
-                 color, true);
 
-  while(rectangle.has_next_box()){
-      Rectangle r = rectangle.next_box();
-      GeometricRelation::BoxTriangleRelation  relation = GeometricRelation::box_triangle_relation(anti_clock, r);
-      if(relation == GeometricRelation::INSIDE_TRIANGLE){
-          fill_in_rectangle(r,color);
-      } else if(relation == GeometricRelation::CROSS_TRIANGLE){
-//          rasterize_rectangle(r, color);
-          rasterize_points_in_box(r,anti_clock, color);
-      } else if (!rectangle.has_split()){
-//          rasterize_rectangle(r, color);
-          rasterize_points_in_box(r,anti_clock, color);
-      }
-  }
+    x0 *= sample_rate;
+    y0 *= sample_rate;
+    x1 *= sample_rate;
+    y1 *= sample_rate;
+    x2 *= sample_rate;
+    y2 *= sample_rate;
+    drawLineOfSuperSample(x0, y0,
+                   x1, y1,
+                   color);
+    drawLineOfSuperSample(x1, y1,
+                   x2, y2,
+                   color);
+    drawLineOfSuperSample(x2, y2,
+                   x0, y0,
+                   color);
+    auto rectangle = box_triangle(x0, y0,
+                                  x1, y1,
+                                  x2, y2);
+//  rasterize_rectangle(rectangle, color);
+    auto anti_clock = anticlock_triangle_points(x0, y0,
+                                                x1, y1,
+                                                x2, y2);
+
+
+    while (rectangle.has_next_box()) {
+        Rectangle r = rectangle.next_box();
+        GeometricRelation::BoxTriangleRelation relation = GeometricRelation::box_triangle_relation(anti_clock, r);
+        if (relation == GeometricRelation::INSIDE_TRIANGLE) {
+            fill_in_rectangle(r, color);
+        } else if (relation == GeometricRelation::CROSS_TRIANGLE) {
+            rasterize_points_in_box(r, anti_clock, color);
+        } else if (!rectangle.has_split()) {
+            rasterize_points_in_box(r, anti_clock, color);
+        }
+    }
 }
 
 void SoftwareRendererImp::rasterize_image( float x0, float y0,

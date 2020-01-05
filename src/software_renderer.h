@@ -74,8 +74,7 @@ namespace CMU462 { // CMU462
 
         // draw an svg input to render target
         void draw_svg(SVG &svg);
-
-        void rasterize_rectangle(CMU462::Rectangle rectangle, Color c);
+        
         // set sample rate
         void set_sample_rate(size_t sample_rate);
 
@@ -130,8 +129,10 @@ namespace CMU462 { // CMU462
         void rasterize_line(float x0, float y0,
                             float x1, float y1,
                             Color color,bool need_anti_alias = false);
-        void rasterize_line(point start, point end,
-                            Color color);
+
+        void drawLineOfSuperSample(float x0, float y0,
+                                   float x1, float y1,
+                                   Color color);
 
         // rasterize a triangle
         void rasterize_triangle(float x0, float y0,
