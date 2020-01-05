@@ -278,7 +278,11 @@ void DrawSVG::clear( void ) {
   }
 
   if( method == Software ) {
-    software_renderer->clear_target();    
+      if(software_renderer == software_renderer_imp){
+          ((SoftwareRendererImp*)software_renderer)->clear_target();
+      } else {
+          software_renderer->clear_target();
+      }
   }
 }
 

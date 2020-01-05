@@ -229,35 +229,44 @@ void SoftwareRendererImp::draw_group( Group& group ) {
 
 void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
 
-  // fill in the nearest pixel
-  int sx = (int) floor(x);
-  int sy = (int) floor(y);
+    // fill in the nearest pixel
+    x *= sample_rate;
+    y *= sample_rate;
+    int sx = (int) floor(x);
+    int sy = (int) floor(y);
 
-  // check bounds
-  if ( sx < 0 || sx >= target_w ) return;
-  if ( sy < 0 || sy >= target_h ) return;
-
-  sx *= sample_rate;
-  sy *= sample_rate;
-  for(int x = sx; x < sx + sample_rate; x++){
-      for(int y = sy; y < sy + sample_rate; y++){
-          int pos = 4 * (x + y *sample_w);
-          supersample_render_target[pos  ] = (uint8_t) (color.r * 255);
-          supersample_render_target[pos+1] = (uint8_t) (color.g * 255);
-          supersample_render_target[pos+2] = (uint8_t) (color.b * 255);
-          supersample_render_target[pos+3] = (uint8_t) (color.a * 255);
-
+    // check bounds
+    if (sx < 0 || sx >= sample_w) return;
+    if (sy < 0 || sy >= sample_h) return;
+    for (int x = sx; x < sx + sample_rate; x++) {
+        for (int y = sy; y < sy + sample_rate; y++) {
+            int pos = 4 * (x + y * sample_w);
+            supersample_render_target[pos    ] = (uint8_t) (color.r * 255);
+            supersample_render_target[pos + 1] = (uint8_t) (color.g * 255);
+            supersample_render_target[pos + 2] = (uint8_t) (color.b * 255);
+            supersample_render_target[pos + 3] = (uint8_t) (color.a * 255);
 
 
-      }
-  }
+        }
+    }
 
-  // fill sample - NOT doing alpha blending!
+    // fill sample - NOT doing alpha blending!
 //  render_target[4 * (sx + sy * target_w)    ] = (uint8_t) (color.r * 255);
 //  render_target[4 * (sx + sy * target_w) + 1] = (uint8_t) (color.g * 255);
 //  render_target[4 * (sx + sy * target_w) + 2] = (uint8_t) (color.b * 255);
-//  render_target[4 * (sx + sy * target_w) + 3] = (uint8_t) (color.a * 255);
+//  render_target[4 * (sx + sy * target_w) + 3]} = (uint8_t) (color.a * 255);
 
+}
+
+void SoftwareRendererImp::fill_sample(int sx, int sy, CMU462::Color c) {
+    if(sx < 0 || sx >= sample_w) return;
+    if(sy < 0 || sy >= sample_h) return;
+    size_t pos = 4 * (sx + sy * sample_w);
+
+    supersample_render_target[pos] = (uint8_t)(c.r * 255);
+    supersample_render_target[pos + 1] = (uint8_t)(c.g * 255);
+    supersample_render_target[pos + 2] = (uint8_t)(c.b * 255);
+    supersample_render_target[pos + 3] = (uint8_t)(c.a * 255);
 }
 
 void SoftwareRendererImp::rasterize_point(point p, Color c){
@@ -268,10 +277,16 @@ void SoftwareRendererImp::rasterize_point(point p, Color c){
 
 void SoftwareRendererImp::rasterize_line( float x0, float y0,
                                           float x1, float y1,
-                                          Color color) {
+                                          Color color, bool need_anti_alias) {
 
   // Task 2: 
   // Implement line rasterization
+    if(need_anti_alias) {
+        x0 *= sample_rate;
+        y0 *= sample_rate;
+        x1 *= sample_rate;
+        y1 *= sample_rate;
+    }
     int sx = (int) floor(x0), sy = (int) floor(y0),
             ex = (int) floor(x1), ey = (int) floor(y1);
     if (sx > ex) {
@@ -299,8 +314,14 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
     int y = sy;
     for (int x = sx; x <= ex; x++) {
-        if (exchange_x_y) rasterize_point((float) y, (float) x, color);
-        else rasterize_point((float) x, (float) y, color);
+        if (exchange_x_y) {
+            if (need_anti_alias)  fill_sample(y, x, color);
+            else                  rasterize_point(y, x, color);
+        }
+        else {
+            if(need_anti_alias) fill_sample(x, y, color);
+            else                rasterize_point(x, y, color);
+        }
         eps += dy;
         if (is_postive_slope) {
             if ((eps << 1) >= dx) {
@@ -371,31 +392,7 @@ vector<std::pair<float, float>> anticlock_triangle_points(float x0, float y0,
     points.push_back(point1);
     points.push_back(point2);
     points.push_back(point3);
-    point top_point = *max_element(points.begin(), points.end(),
-                                   [](point p1, point p2){
-                                        return p1.second < p2.second;
-                                     });
-    points.erase(std::remove(points.begin(), points.end(), top_point), points.end());
-    point s_top_point = *max_element(points.begin(), points.end(),
-                                   [](point p1, point p2){
-                                       return p1.second < p2.second;
-                                   });
-    points.erase(std::remove(points.begin(), points.end(), s_top_point), points.end());
-    point third_point = points[0];
-    vector<point> anti_clock;
-    if(s_top_point.second == top_point.second){
-        if(s_top_point.first > top_point.first){
-            std::swap(s_top_point,top_point);
-        }
-    } else {
-        if(s_top_point.first > third_point.first){
-            std::swap(s_top_point, third_point);
-        }
-    }
-    anti_clock.push_back(top_point);
-    anti_clock.push_back(s_top_point);
-    anti_clock.push_back(third_point);
-    return anti_clock;
+    return points;
 
 }
 
@@ -410,7 +407,7 @@ void SoftwareRendererImp::fill_in_rectangle(Rectangle &r, Color color) {
     while(start_y_index <= r.topLeft.second){
         rasterize_line(r.bottomLeft.first, start_y_index,
                        r.bottomRight.first, start_y_index,
-                       color);
+                       color, true);
         start_y_index += 1;
     }
 }
@@ -445,13 +442,13 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                             x2, y2);
   rasterize_line(x0, y0,
                  x1, y1,
-                 color);
+                 color, true);
   rasterize_line(x1, y1,
                  x2, y2,
-                 color);
+                 color, true);
   rasterize_line(x2, y2,
                  x0, y0,
-                 color);
+                 color, true);
 
   while(rectangle.has_next_box()){
       Rectangle r = rectangle.next_box();

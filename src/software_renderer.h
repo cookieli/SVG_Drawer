@@ -33,7 +33,7 @@ namespace CMU462 { // CMU462
         // Clear render target
         inline void clear_target() {
             memset(render_target, 255, 4 * target_w * target_h);
-            std::fill(supersample_render_target.begin(), supersample_render_target.end(), 0);
+//            std::fill(supersample_render_target.begin(), supersample_render_target.end(), 0);
         }
 
         // Set texture sampler
@@ -57,10 +57,6 @@ namespace CMU462 { // CMU462
         // Target buffer dimension (in pixels)
         size_t target_w;
         size_t target_h;
-
-        std::vector<unsigned char> supersample_render_target;
-        size_t sample_w;
-        size_t sample_h;
 
         // Texture sampler being used
         Sampler2D *sampler;
@@ -86,6 +82,11 @@ namespace CMU462 { // CMU462
         // set render target
         void set_render_target(unsigned char *target_buffer,
                                size_t width, size_t height);
+
+        inline void clear_target() {
+            memset(render_target, 255, 4 * target_w * target_h);
+            std::fill(supersample_render_target.begin(), supersample_render_target.end(), 0);
+        }
 
     private:
 
@@ -128,7 +129,7 @@ namespace CMU462 { // CMU462
         // rasterize a line
         void rasterize_line(float x0, float y0,
                             float x1, float y1,
-                            Color color);
+                            Color color,bool need_anti_alias = false);
         void rasterize_line(point start, point end,
                             Color color);
 
@@ -148,6 +149,13 @@ namespace CMU462 { // CMU462
 
         // resolve samples to render target
         void resolve(void);
+
+        void fill_sample(int sx, int sy, Color c);
+
+    private:
+        std::vector<unsigned char> supersample_render_target;
+        size_t sample_w;
+        size_t sample_h;
 
     }; // class SoftwareRendererImp
 
