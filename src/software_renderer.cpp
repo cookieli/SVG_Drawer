@@ -21,10 +21,12 @@ void SoftwareRendererImp::draw_svg( SVG& svg ) {
 
   // set top level transformation
   transformation = svg_2_screen;
+  auto old_transformation = transformation;
 
   // draw all elements
   for ( size_t i = 0; i < svg.elements.size(); ++i ) {
     draw_element(svg.elements[i]);
+    transformation = old_transformation;
   }
 
   // draw canvas outline
@@ -70,7 +72,7 @@ void SoftwareRendererImp::draw_element( SVGElement* element ) {
 
   // Task 5 (part 1):
   // Modify this to implement the transformation stack
-
+  transformation = transformation * element->transform;
   switch(element->type) {
     case POINT:
       draw_point(static_cast<Point&>(*element));
@@ -216,10 +218,11 @@ void SoftwareRendererImp::draw_image( Image& image ) {
 
 void SoftwareRendererImp::draw_group( Group& group ) {
 
-  for ( size_t i = 0; i < group.elements.size(); ++i ) {
-    draw_element(group.elements[i]);
-  }
-
+    auto old_transformation = transformation;
+    for (size_t i = 0; i < group.elements.size(); ++i) {
+        draw_element(group.elements[i]);
+        transformation = old_transformation;
+    }
 }
 
 // Rasterization //

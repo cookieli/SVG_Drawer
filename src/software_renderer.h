@@ -74,7 +74,7 @@ namespace CMU462 { // CMU462
 
         // draw an svg input to render target
         void draw_svg(SVG &svg);
-        
+
         // set sample rate
         void set_sample_rate(size_t sample_rate);
 
