@@ -233,8 +233,8 @@ void SoftwareRendererImp::draw_group( Group& group ) {
 void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
 
     // fill in the nearest pixel
-    x *= sample_rate;
-    y *= sample_rate;
+//    x *= sample_rate;
+//    y *= sample_rate;
     int sx = (int) floor(x);
     int sy = (int) floor(y);
 
@@ -257,7 +257,7 @@ void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
 //  render_target[4 * (sx + sy * target_w)    ] = (uint8_t) (color.r * 255);
 //  render_target[4 * (sx + sy * target_w) + 1] = (uint8_t) (color.g * 255);
 //  render_target[4 * (sx + sy * target_w) + 2] = (uint8_t) (color.b * 255);
-//  render_target[4 * (sx + sy * target_w) + 3]} = (uint8_t) (color.a * 255);
+//  render_target[4 * (sx + sy * target_w) + 3] = (uint8_t) (color.a * 255);
 
 }
 
@@ -516,6 +516,16 @@ void SoftwareRendererImp::rasterize_image( float x0, float y0,
                                            Texture& tex ) {
   // Task 6: 
   // Implement image rasterization
+  x0 *= sample_rate; y0 *= sample_rate;
+  x1 *= sample_rate; y1 *= sample_rate;
+  float w = x1 - x0, h = y1 - y0;
+  float du = 1.0f/w, dv = 1.0f/h;
+//  Sampler2DImp sample;
+    for(float x = x0, u = 0.0f; x <= x1; x++, u += du){
+        for(float y = y0, v = 0.0f; y <= y1; y++, v += dv){
+          fill_sample(x, y, sampler->sample_bilinear(tex, u, v, 0));
+      }
+  }
 
 }
 

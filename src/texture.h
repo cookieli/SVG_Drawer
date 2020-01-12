@@ -31,12 +31,12 @@ class Sampler2D {
 
   Sampler2D( SampleMethod method ) : method ( method ) { }
 
-  ~Sampler2D();
+  ~Sampler2D(){};
 
   virtual void generate_mips( Texture& tex, int startLevel ) = 0;
 
   virtual Color sample_nearest(Texture& tex, 
-                               float u, float v, 
+                               float u, float v,
                                int level = 0) = 0;
 
   virtual Color sample_bilinear(Texture& tex, 

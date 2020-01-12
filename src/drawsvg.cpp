@@ -15,7 +15,8 @@ DrawSVG::~DrawSVG() {
   viewport_ref.clear();
 
   delete hardware_renderer;
-
+  delete sampler_ref;
+  delete sampler_imp;
   delete software_renderer_imp;
   delete software_renderer_ref;
 
