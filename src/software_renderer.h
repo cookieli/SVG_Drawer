@@ -128,7 +128,7 @@ namespace CMU462 { // CMU462
         // rasterize a line
         void rasterize_line(float x0, float y0,
                             float x1, float y1,
-                            Color color,bool need_anti_alias = false);
+                            Color color,bool need_anti_alias = true);
 
         void drawLineOfSuperSample(float x0, float y0,
                                    float x1, float y1,
@@ -151,7 +151,7 @@ namespace CMU462 { // CMU462
         // resolve samples to render target
         void resolve(void);
 
-        void fill_sample(int sx, int sy, Color c);
+        void fill_sample(size_t sx, size_t sy, Color c);
 
     private:
         std::vector<unsigned char> supersample_render_target;

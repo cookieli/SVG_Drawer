@@ -261,12 +261,12 @@ void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
 
 }
 
-void SoftwareRendererImp::fill_sample(int sx, int sy, CMU462::Color c) {
+void SoftwareRendererImp::fill_sample(size_t sx, size_t sy, CMU462::Color c) {
     if(sx < 0 || sx >= sample_w) return;
     if(sy < 0 || sy >= sample_h) return;
-    size_t pos = 4 * (sx + sy * sample_w);
+    size_t pos = (size_t)4 * (sx + sy * sample_w);
 
-    supersample_render_target[pos] = (uint8_t)(c.r * 255);
+    supersample_render_target[pos    ] = (uint8_t)(c.r * 255);
     supersample_render_target[pos + 1] = (uint8_t)(c.g * 255);
     supersample_render_target[pos + 2] = (uint8_t)(c.b * 255);
     supersample_render_target[pos + 3] = (uint8_t)(c.a * 255);
@@ -520,10 +520,12 @@ void SoftwareRendererImp::rasterize_image( float x0, float y0,
   x1 *= sample_rate; y1 *= sample_rate;
   float w = x1 - x0, h = y1 - y0;
   float du = 1.0f/w, dv = 1.0f/h;
+  float u_scale = tex.width / w, v_scale = tex.height / h;
 //  Sampler2DImp sample;
-    for(float x = x0, u = 0.0f; x <= x1; x++, u += du){
-        for(float y = y0, v = 0.0f; y <= y1; y++, v += dv){
-          fill_sample(x, y, sampler->sample_bilinear(tex, u, v, 0));
+    for(float x = x0, u = 0.0f; x <= x1; x+=1.0, u += du){
+        for(float y = y0, v = 0.0f; y <= y1; y+=1.0, v += dv){
+          fill_sample(x, y, sampler->sample_trilinear(tex, u, v, u_scale, v_scale));
+//            fill_sample(x, y, sampler->sample_bilinear(tex, u, v, 0));
       }
   }
 
