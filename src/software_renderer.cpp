@@ -52,7 +52,8 @@ void SoftwareRendererImp::set_sample_rate( size_t sample_rate ) {
   this->sample_rate = sample_rate;
   this->sample_h = this->target_h * this->sample_rate;
   this->sample_w = this->target_w * this->sample_rate;
-  this->supersample_render_target.resize(4 * this->sample_w * this->sample_h);
+//  this->supersample_render_target.resize(4 * this->sample_w * this->sample_h);
+  this->reset_buffer();
 }
 
 void SoftwareRendererImp::set_render_target( unsigned char* render_target,
@@ -65,7 +66,9 @@ void SoftwareRendererImp::set_render_target( unsigned char* render_target,
   this->target_h = height;
   this->sample_h = this->target_h * this->sample_rate;
   this->sample_w = this->target_w * this->sample_rate;
-  this->supersample_render_target.resize(4 * this->sample_w * this->sample_h);
+  this->reset_buffer();
+//  this->supersample_render_target.resize(4 * this->sample_w * this->sample_h);
+//  this->color_buffer.resize(this->sample_w * this->sample_h);
 }
 
 void SoftwareRendererImp::draw_element( SVGElement* element ) {
@@ -244,12 +247,18 @@ void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
     for (int x = sx; x < sx + sample_rate; x++) {
         for (int y = sy; y < sy + sample_rate; y++) {
             int pos = 4 * (x + y * sample_w);
-            supersample_render_target[pos    ] = (uint8_t) (color.r * 255);
-            supersample_render_target[pos + 1] = (uint8_t) (color.g * 255);
-            supersample_render_target[pos + 2] = (uint8_t) (color.b * 255);
-            supersample_render_target[pos + 3] = (uint8_t) (color.a * 255);
-
-
+            int color_pos = x + y * sample_w;
+            Color canvas_color = color_buffer[color_pos];
+            Color new_color;
+            new_color.a = 1 - (1 - color.a) * (1 - canvas_color.a);
+            new_color.r = (1 - color.a) * canvas_color.r + color.r;
+            new_color.g = (1 - color.a) * canvas_color.g + color.g;
+            new_color.b = (1 - color.a) * canvas_color.b + color.b;
+            color_buffer[color_pos] = new_color;
+            supersample_render_target[pos    ] = (uint8_t) (new_color.r * 255);
+            supersample_render_target[pos + 1] = (uint8_t) (new_color.g * 255);
+            supersample_render_target[pos + 2] = (uint8_t) (new_color.b * 255);
+            supersample_render_target[pos + 3] = (uint8_t) (new_color.a * 255);
         }
     }
 
@@ -264,12 +273,26 @@ void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
 void SoftwareRendererImp::fill_sample(size_t sx, size_t sy, CMU462::Color c) {
     if(sx < 0 || sx >= sample_w) return;
     if(sy < 0 || sy >= sample_h) return;
+    c = c.premultiply(c.a);
     size_t pos = (size_t)4 * (sx + sy * sample_w);
-
-    supersample_render_target[pos    ] = (uint8_t)(c.r * 255);
-    supersample_render_target[pos + 1] = (uint8_t)(c.g * 255);
-    supersample_render_target[pos + 2] = (uint8_t)(c.b * 255);
-    supersample_render_target[pos + 3] = (uint8_t)(c.a * 255);
+    int color_pos = sx + sy * sample_w;
+    Color canvas_color = color_buffer[color_pos];
+    canvas_color.premultiply(canvas_color.a);
+    Color new_color;
+//    if(canvas_color == Color::Black){
+        new_color.a = 1 - (1 - c.a) * (1 - canvas_color.a);
+        new_color.r = (1 - c.a) * canvas_color.r + c.r;
+        new_color.g = (1 - c.a) * canvas_color.g + c.g;
+        new_color.b = (1 - c.a) * canvas_color.b + c.b;
+//    } else{
+//        new_color = c;
+//    }
+    new_color.un_premultiply(new_color.a);
+    color_buffer[color_pos] = new_color;
+    supersample_render_target[pos    ] = (uint8_t)(new_color.r * 255);
+    supersample_render_target[pos + 1] = (uint8_t)(new_color.g * 255);
+    supersample_render_target[pos + 2] = (uint8_t)(new_color.b * 255);
+    supersample_render_target[pos + 3] = (uint8_t)(new_color.a * 255);
 }
 
 void SoftwareRendererImp::rasterize_point(point p, Color c){
@@ -480,15 +503,15 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
     y1 *= sample_rate;
     x2 *= sample_rate;
     y2 *= sample_rate;
-    drawLineOfSuperSample(x0, y0,
-                   x1, y1,
-                   color);
-    drawLineOfSuperSample(x1, y1,
-                   x2, y2,
-                   color);
-    drawLineOfSuperSample(x2, y2,
-                   x0, y0,
-                   color);
+//    drawLineOfSuperSample(x0, y0,
+//                   x1, y1,
+//                   color);
+//    drawLineOfSuperSample(x1, y1,
+//                   x2, y2,
+//                   color);
+//    drawLineOfSuperSample(x2, y2,
+//                   x0, y0,
+//                   color);
     auto rectangle = box_triangle(x0, y0,
                                   x1, y1,
                                   x2, y2);

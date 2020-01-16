@@ -69,6 +69,14 @@ class Color {
     return Color( r * s, g * s, b * s, a * s );
   }
 
+  inline Color premultiply(float a_) const {
+      return Color(r*a_, g*a_, b*a_, a);
+  }
+
+  inline Color un_premultiply(float a_) const{
+      return Color(r/a_, g/a_, b/a_, a);
+  }
+
   inline Color& operator*=( float s ) {
     r *= s; g *= s; b *= s; a *= s;
     return *this;

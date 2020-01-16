@@ -85,6 +85,12 @@ namespace CMU462 { // CMU462
         inline void clear_target() {
             memset(render_target, 255, 4 * target_w * target_h);
             std::fill(supersample_render_target.begin(), supersample_render_target.end(), 0);
+            std::fill(color_buffer.begin(), color_buffer.end(), Color::White);
+        }
+
+        inline void reset_buffer(){
+            supersample_render_target.resize(4 *sample_h * sample_w);
+            color_buffer.resize(sample_w * sample_h, Color::White);
         }
 
     private:
@@ -155,6 +161,7 @@ namespace CMU462 { // CMU462
 
     private:
         std::vector<unsigned char> supersample_render_target;
+        std::vector<Color>         color_buffer;
         size_t sample_w;
         size_t sample_h;
 

@@ -17,9 +17,9 @@ namespace CMU462{
         friend class SoftwareRendererImp;
         Rectangle(std::vector<point> points):topLeft(points[0]), topRight(points[1]),
                                              bottomRight(points[2]), bottomLeft(points[3]),
-                                             split(25), box_count(0),point_vec(points){};
+                                             split(1), box_count(0),point_vec(points){};
         Rectangle(point topLeft, point topRight, point bottomRight, point bottomLeft):
-        topLeft(topLeft), topRight(topRight), bottomLeft(bottomLeft), bottomRight(bottomRight),split(25), box_count(0){
+        topLeft(topLeft), topRight(topRight), bottomLeft(bottomLeft), bottomRight(bottomRight),split(1), box_count(0){
             point_vec.push_back(topLeft);
             point_vec.push_back(topRight);
             point_vec.push_back(bottomRight);
